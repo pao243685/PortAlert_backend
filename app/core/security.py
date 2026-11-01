@@ -1,3 +1,5 @@
+import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
@@ -14,7 +16,27 @@ def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed.encode())
 
 
-# El claim typ separa el token de sesión de otros tokens que se agreguen después
+# --- API key del agente: "<prefijo>.<secreto>"; en la BD solo el prefijo y el hash ---
+def generate_api_key() -> tuple[str, str]:
+    prefix = secrets.token_hex(6)
+    key = f"{prefix}.{secrets.token_urlsafe(32)}"
+    return key, prefix
+
+
+def hash_api_key(key: str) -> str:
+    return hashlib.sha256(key.encode()).hexdigest()
+
+
+# --- token de vinculación del agente (un solo uso, solo se guarda su hash) ---
+def generate_enroll_token() -> str:
+    return secrets.token_urlsafe(32)
+
+
+def hash_enroll_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+# --- JWT: el claim "typ" separa el token de sesión de otros tokens que se agreguen después ---
 def _create_token(user_id: int, typ: str, minutes: int) -> str:
     exp = datetime.now(timezone.utc) + timedelta(minutes=minutes)
     return jwt.encode(
@@ -38,3 +60,8 @@ def create_access_token(user_id: int) -> str:
 
 def decode_access_token(token: str) -> int | None:
     return _decode_token(token, "access")
+
+
+def as_utc(dt: datetime) -> datetime:
+    """SQLite devuelve datetimes sin zona; Postgres con zona. Unifica."""
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)

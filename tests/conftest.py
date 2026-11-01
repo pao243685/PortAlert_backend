@@ -1,7 +1,7 @@
 import os
 
 os.environ["DATABASE_URL"] = "sqlite:///./test_portalert.db"
-os.environ["SECRET_KEY"] = "clave-de-pruebas"  
+os.environ["SECRET_KEY"] = "clave-de-pruebas"
 
 import pytest
 from fastapi.testclient import TestClient
@@ -30,6 +30,7 @@ def borrar_db_al_final():
 def client():
     return TestClient(app)
 
+
 @pytest.fixture
 def registrar(client):
     def _registrar(email="a@correo.com", password="Clave12345"):
@@ -38,3 +39,23 @@ def registrar(client):
         return {"Authorization": f"Bearer {r.json()['access_token']}"}
 
     return _registrar
+
+
+@pytest.fixture
+def crear_host(client):
+    """Vincula un dispositivo con el flujo real: token -> enroll del agente."""
+
+    def _crear(headers, nombre="laptop"):
+        t = client.post("/hosts/enroll-token", headers=headers).json()["enroll_token"]
+        r = client.post(
+            "/hosts/enroll",
+            json={
+                "enroll_token": t,
+                "name": nombre,
+                "os_family": "linux",
+                "os_version": "Ubuntu 22.04",
+            },
+        )
+        return r.json()
+
+    return _crear

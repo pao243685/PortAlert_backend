@@ -23,6 +23,7 @@ def register(data: UserCreate, db: Session = Depends(get_db)):
     db.refresh(user)
     return user
 
+
 @router.post("/login", response_model=Token)
 def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(User.email == form.username.lower()))
