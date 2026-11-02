@@ -62,3 +62,12 @@ def crear_host(client):
         return r.json()
 
     return _crear
+
+@pytest.fixture
+def enviar(client):
+    def _enviar(host, reporte):
+        return client.post(
+            "/reports", json=reporte, headers={"X-API-Key": host["api_key"]}
+        )
+
+    return _enviar

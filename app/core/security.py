@@ -1,3 +1,4 @@
+import hmac
 import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -65,3 +66,6 @@ def decode_access_token(token: str) -> int | None:
 def as_utc(dt: datetime) -> datetime:
     """SQLite devuelve datetimes sin zona; Postgres con zona. Unifica."""
     return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+def verify_api_key(key: str, hashed: str) -> bool:
+    return hmac.compare_digest(hash_api_key(key), hashed)
