@@ -2,6 +2,9 @@ import os
 
 os.environ["DATABASE_URL"] = "sqlite:///./test_portalert.db"
 os.environ["SECRET_KEY"] = "clave-de-pruebas"
+os.environ["AGENT_DOWNLOAD_URL_LINUX"] = "https://releases.example/portalert-agent-linux"
+os.environ["AGENT_DOWNLOAD_URL_WINDOWS"] = "https://releases.example/portalert-agent.exe"
+os.environ["PUBLIC_API_URL"] = "https://api.example"
 
 import pytest
 from fastapi.testclient import TestClient
