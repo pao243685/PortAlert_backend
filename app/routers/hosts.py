@@ -79,3 +79,21 @@ def enroll(data: EnrollIn, db: Session = Depends(get_db)):
         raise HTTPException(409, "Este usuario ya tiene un dispositivo vinculado")
     db.refresh(host)
     return {**HostOut.model_validate(host).model_dump(), "api_key": key}
+
+
+@router.get("", response_model=list[HostOut])
+def list_hosts(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return db.scalars(select(Host).where(Host.user_id == user.id)).all()
+
+
+@router.delete("/{host_id}", status_code=204)
+def delete_host(
+    host_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    host = db.scalar(select(Host).where(Host.id == host_id, Host.user_id == user.id))
+    if not host:
+        raise HTTPException(404, "Host no encontrado")
+    db.delete(host)
+    db.commit()
