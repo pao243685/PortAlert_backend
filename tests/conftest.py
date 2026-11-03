@@ -1,7 +1,10 @@
 import os
 
+from cryptography.fernet import Fernet
+
 os.environ["DATABASE_URL"] = "sqlite:///./test_portalert.db"
 os.environ["SECRET_KEY"] = "clave-de-pruebas"
+os.environ["TOTP_ENCRYPTION_KEY"] = Fernet.generate_key().decode()
 os.environ["AGENT_DOWNLOAD_URL_LINUX"] = "https://releases.example/portalert-agent-linux"
 os.environ["AGENT_DOWNLOAD_URL_WINDOWS"] = "https://releases.example/portalert-agent.exe"
 os.environ["PUBLIC_API_URL"] = "https://api.example"
@@ -62,6 +65,7 @@ def crear_host(client):
         return r.json()
 
     return _crear
+
 
 @pytest.fixture
 def enviar(client):
