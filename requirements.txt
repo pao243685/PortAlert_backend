@@ -8,3 +8,4 @@ bcrypt==5.0.0
 email-validator==2.3.0
 PyJWT==2.15.1
 python-multipart==0.0.32cryptography==46.0.3
+pyotp==2.9.0
