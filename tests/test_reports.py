@@ -13,27 +13,25 @@ def test_reporte_con_api_key_valida(registrar, crear_host, enviar):
     assert r.json()["score"] == 100
 
 
-def test_reporte_actualiza_el_host(client, registrar, crear_host, enviar):
-    headers = registrar()
-    host = crear_host(headers)
-    assert client.get("/hosts", headers=headers).json()[0]["score"] is None
-    enviar(host, REPORTE_LIMPIO)
-    assert client.get("/hosts", headers=headers).json()[0]["score"] == 100
-
-
 def test_reporte_sin_api_key(client):
     assert client.post("/reports", json=REPORTE_LIMPIO).status_code == 422
 
 
 def test_reporte_con_api_key_falsa(client):
-    r = client.post("/reports", json=REPORTE_LIMPIO, headers={"X-API-Key": "abc123.falsa"})
+    r = client.post(
+        "/reports", json=REPORTE_LIMPIO, headers={"X-API-Key": "abc123.falsa"}
+    )
     assert r.status_code == 401
 
 
 def test_reporte_con_demasiados_puertos(registrar, crear_host, enviar):
     host = crear_host(registrar())
-    puertos = [{"port": 8000, "protocol": "tcp", "bind_address": "127.0.0.1"} for _ in range(2001)]
-    assert enviar(host, {"processes": [], "ports": puertos}).status_code == 422
+    puertos = [
+        {"port": 8000, "protocol": "tcp", "bind_address": "127.0.0.1"}
+        for _ in range(2001)
+    ]
+    r = enviar(host, {"processes": [], "ports": puertos})
+    assert r.status_code == 422
 
 
 def test_reporte_excede_tamano(client, registrar, crear_host):

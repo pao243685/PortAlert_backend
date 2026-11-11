@@ -4,7 +4,7 @@ El usuario genera un token (POST /hosts/enroll-token) y descarga un script que y
 ese token adentro. El script baja el binario del agente, lo vincula (POST /hosts/enroll)
 y lo deja corriendo como servicio. El token se valida igual que en /hosts/enroll;
 el script se puede pedir varias veces mientras el token siga vigente: lo que lo consume
-es la vinculación, no la descarga.
+es la vinculacion, no la descarga.
 """
 import shlex
 from datetime import datetime, timezone
@@ -102,11 +102,10 @@ $env:PORTALERT_CONFIG = $Conf
 & $Exe enroll --server $Server --token $Token
 if ($LASTEXITCODE -ne 0) { Write-Error 'No se pudo vincular el equipo.' }
 
-$action  = New-ScheduledTaskAction -Execute 'cmd.exe' -Argument ('/c set "PORTALERT_CONFIG=' + $Conf + '" && "' + $Exe + '" run')
+$action  = New-ScheduledTaskAction -Execute $Exe -Argument 'run'
 $trigger = New-ScheduledTaskTrigger -AtStartup
 $user    = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -RunLevel Highest
-$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
-Register-ScheduledTask -TaskName 'PortAlertAgent' -Action $action -Trigger $trigger -Principal $user -Settings $settings -Force | Out-Null
+Register-ScheduledTask -TaskName 'PortAlertAgent' -Action $action -Trigger $trigger -Principal $user -Force | Out-Null
 Start-ScheduledTask -TaskName 'PortAlertAgent'
 Write-Host 'Listo. El agente quedó instalado y enviará su primer reporte en unos segundos.'
 """

@@ -1,10 +1,11 @@
 import os
 
-from cryptography.fernet import Fernet
-
 os.environ["DATABASE_URL"] = "sqlite:///./test_portalert.db"
 os.environ["SECRET_KEY"] = "clave-de-pruebas"
+from cryptography.fernet import Fernet
+
 os.environ["TOTP_ENCRYPTION_KEY"] = Fernet.generate_key().decode()
+os.environ["VIRUSTOTAL_API_KEY"] = ""
 os.environ["AGENT_DOWNLOAD_URL_LINUX"] = "https://releases.example/portalert-agent-linux"
 os.environ["AGENT_DOWNLOAD_URL_WINDOWS"] = "https://releases.example/portalert-agent.exe"
 os.environ["PUBLIC_API_URL"] = "https://api.example"
@@ -12,15 +13,18 @@ os.environ["PUBLIC_API_URL"] = "https://api.example"
 import pytest
 from fastapi.testclient import TestClient
 
-from app import models  # noqa: F401  (registra las tablas en Base)
-from app.core.database import Base, engine
+from app import models
+from app.core.database import Base, SessionLocal, engine
 from app.main import app
+from app.services.rules import seed_rules
 
 
 @pytest.fixture(autouse=True)
 def base_limpia():
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
+    with SessionLocal() as db:
+        seed_rules(db)
     yield
 
 

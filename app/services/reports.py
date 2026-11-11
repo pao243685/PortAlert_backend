@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 
 from app.models import Host, PortEntry, ProcessEntry, Report
 from app.schemas.report import ReportIn
+from app.services.analyzer import analyze_report
 
 
 def ingest_report(db: Session, host: Host, data: ReportIn) -> Report:
@@ -30,8 +31,7 @@ def ingest_report(db: Session, host: Host, data: ReportIn) -> Report:
         )
     db.flush()
 
-    # Provisional: el análisis de reglas llega en un commit posterior y calculará el score real.
-    # Mientras tanto un reporte recibido cuenta como 100 (sin hallazgos) para que el panel avance.
-    report.score = 100
-    host.score = 100
+    score = analyze_report(db, host, report)
+    report.score = score
+    host.score = score
     return report

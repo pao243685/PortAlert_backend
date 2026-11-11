@@ -22,6 +22,7 @@ class HostOut(BaseModel):
     os_version: str | None
     last_seen: datetime
     score: int | None
+    review_completed_at: datetime | None = None
     model_config = {"from_attributes": True}
 
 

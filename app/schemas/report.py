@@ -1,9 +1,7 @@
 from datetime import datetime
 
 from pydantic import BaseModel, Field
-
 from app.core.constants import MAX_ELEMENTOS_REPORTE
-
 
 class ProcessIn(BaseModel):
     pid: int

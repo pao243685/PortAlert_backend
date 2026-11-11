@@ -1,5 +1,4 @@
 import os
-
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -22,3 +21,4 @@ AGENT_DOWNLOAD_URL_LINUX = os.getenv("AGENT_DOWNLOAD_URL_LINUX", "")
 AGENT_DOWNLOAD_URL_WINDOWS = os.getenv("AGENT_DOWNLOAD_URL_WINDOWS", "")
 AGENT_SHA256_LINUX = os.getenv("AGENT_SHA256_LINUX", "").lower()
 AGENT_SHA256_WINDOWS = os.getenv("AGENT_SHA256_WINDOWS", "").lower()
+VIRUSTOTAL_API_KEY = os.getenv("VIRUSTOTAL_API_KEY", "")
