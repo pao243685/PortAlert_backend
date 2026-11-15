@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import FRONTEND_URL
 from app.core.constants import MAX_BYTES_REPORTE
 from app.core.limite_tamano import LimiteReportes
-from app.routers import alerts, auth, health, hosts, installers, reports, review
+from app.routers import alerts, auth, health, hosts, installers, panel, ports, reports, review
 
 app = FastAPI(title="PortAlert API")
 
@@ -21,5 +21,7 @@ app.include_router(auth.router)
 app.include_router(hosts.router)
 app.include_router(installers.router)
 app.include_router(review.router)
+app.include_router(panel.router)
+app.include_router(ports.router)
 app.include_router(reports.router)
 app.include_router(alerts.router)
