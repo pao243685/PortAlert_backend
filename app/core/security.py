@@ -48,6 +48,14 @@ def hash_enroll_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
+def generate_telegram_token() -> str:
+    return secrets.token_urlsafe(32)
+
+
+def hash_telegram_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
 # --- cifrado de totp_secret: lo hace la aplicacion, la BD solo ve texto cifrado ---
 def encrypt_secret(plain: str) -> str:
     return _fernet.encrypt(plain.encode()).decode()

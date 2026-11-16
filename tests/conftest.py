@@ -9,6 +9,9 @@ os.environ["VIRUSTOTAL_API_KEY"] = ""
 os.environ["AGENT_DOWNLOAD_URL_LINUX"] = "https://releases.example/portalert-agent-linux"
 os.environ["AGENT_DOWNLOAD_URL_WINDOWS"] = "https://releases.example/portalert-agent.exe"
 os.environ["PUBLIC_API_URL"] = "https://api.example"
+os.environ["TELEGRAM_BOT_TOKEN"] = "123456:token-de-pruebas"
+os.environ["TELEGRAM_BOT_USERNAME"] = "portalert_test_bot"
+os.environ["TELEGRAM_WEBHOOK_SECRET"] = "secreto-de-pruebas"
 
 import pytest
 from fastapi.testclient import TestClient

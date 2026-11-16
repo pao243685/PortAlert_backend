@@ -17,6 +17,7 @@ from app.core.constants import (
 from app.core.database import SessionLocal
 from app.models import FileReputation, Host, PortEntry, ProcessEntry, Report
 from app.services.analyzer import _es_temporal, analyze_report
+from app.services.telegram import notificar_pendientes
 
 
 def _veredicto(malicious: int, suspicious: int) -> str:
@@ -125,4 +126,6 @@ def consultar_y_reanalizar(report_id: int) -> None:
         ultimo = db.scalar(select(func.max(Report.id)).where(Report.host_id == host.id))
         if ultimo == report.id:
             host.score = score
+        host_id = host.id
         db.commit()
+    notificar_pendientes(host_id)

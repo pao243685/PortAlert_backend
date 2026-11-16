@@ -8,6 +8,7 @@ from app.core.database import get_db
 from app.core.deps import get_current_host
 from app.models import Host
 from app.schemas.report import ReportIn, ReportOut
+from app.services import telegram
 from app.services.reports import ingest_report
 from app.services.virustotal import consultar_y_reanalizar
 
@@ -25,6 +26,8 @@ def submit_report(
     host.last_seen = datetime.now(timezone.utc)
     db.commit()
     db.refresh(report)
+    if telegram.configurado():
+        background.add_task(telegram.notificar_pendientes, host.id)
     if VIRUSTOTAL_API_KEY:
         background.add_task(consultar_y_reanalizar, report.id)
     return report

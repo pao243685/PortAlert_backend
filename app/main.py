@@ -1,12 +1,26 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import FRONTEND_URL
 from app.core.constants import MAX_BYTES_REPORTE
 from app.core.limite_tamano import LimiteReportes
-from app.routers import alerts, auth, health, hosts, installers, panel, ports, reports, review
+from app.routers import (
+    alerts, auth, health, hosts, installers, panel, ports, reports, review, telegram,
+)
+from app.services.telegram import iniciar_polling
 
-app = FastAPI(title="PortAlert API")
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    parar = iniciar_polling()
+    yield
+    if parar:
+        parar.set()
+
+
+app = FastAPI(title="PortAlert API", lifespan=lifespan)
 
 app.add_middleware(LimiteReportes, max_bytes=MAX_BYTES_REPORTE)
 app.add_middleware(
@@ -25,3 +39,4 @@ app.include_router(panel.router)
 app.include_router(ports.router)
 app.include_router(reports.router)
 app.include_router(alerts.router)
+app.include_router(telegram.router)
