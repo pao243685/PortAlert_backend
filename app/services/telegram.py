@@ -1,6 +1,7 @@
 import logging
 import threading
 from datetime import datetime, timezone
+from urllib.parse import quote
 
 import httpx
 from sqlalchemy import select, update
@@ -39,6 +40,12 @@ def configurado() -> bool:
 
 def enlace_de_vinculacion(token: str) -> str:
     return f"https://t.me/{config.TELEGRAM_BOT_USERNAME}?start={token}"
+
+
+def enlace_web(token: str) -> str:
+    """Abre el bot en Telegram Web, sin requerir la app instalada."""
+    tg = f"tg://resolve?domain={config.TELEGRAM_BOT_USERNAME}&start={token}"
+    return "https://web.telegram.org/k/#?tgaddr=" + quote(tg, safe="")
 
 
 def _url(metodo: str) -> str:

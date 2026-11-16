@@ -49,7 +49,11 @@ def create_link(user: User = Depends(get_current_user), db: Session = Depends(ge
     user.telegram_link_token_hash = hash_telegram_token(token)
     user.telegram_link_expires_at = expires
     db.commit()
-    return TelegramLinkOut(url=telegram.enlace_de_vinculacion(token), expires_at=expires)
+    return TelegramLinkOut(
+        url=telegram.enlace_de_vinculacion(token),
+        web_url=telegram.enlace_web(token),
+        expires_at=expires,
+    )
 
 
 @router.post("/test", status_code=204)

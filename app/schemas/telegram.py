@@ -12,4 +12,5 @@ class TelegramStatusOut(BaseModel):
 
 class TelegramLinkOut(BaseModel):
     url: str
+    web_url: str
     expires_at: datetime

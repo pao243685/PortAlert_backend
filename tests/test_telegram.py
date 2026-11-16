@@ -61,6 +61,8 @@ def test_generar_enlace_deja_el_estado_en_espera(client, registrar):
     headers = registrar()
     r = client.post("/telegram/link", headers=headers).json()
     assert r["url"].startswith("https://t.me/portalert_test_bot?start=")
+    assert r["web_url"].startswith("https://web.telegram.org/k/#?tgaddr=")
+    assert "portalert_test_bot" in r["web_url"]
     assert _estado(client, headers) == "pending"
 
 
