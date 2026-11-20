@@ -42,3 +42,11 @@ def test_descargar_el_instalador_no_consume_el_token(client, registrar):
 def test_host_recien_vinculado_no_tiene_score_hasta_su_primer_reporte(registrar, crear_host):
     # el front usa score == null para distinguir "vinculado" de "primer reporte recibido"
     assert crear_host(registrar())["score"] is None
+
+
+def test_instalador_windows_se_eleva_solo(client, registrar):
+    token = _token(client, registrar())
+    texto = client.get(f"/installers/instalar-{token}.ps1").text
+    assert "param([switch]$Elevado)" in texto
+    assert "-Verb RunAs" in texto and "$PSCommandPath" in texto
+    assert texto.index("-Verb RunAs") < texto.index("Invoke-WebRequest")
