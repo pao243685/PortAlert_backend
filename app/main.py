@@ -13,15 +13,16 @@ from app.core.security_headers import CabecerasSeguras
 from app.routers import (
     alerts, auth, health, hosts, installers, panel, ports, reports, review, telegram,
 )
-from app.services.telegram import iniciar_polling
+from app.services.telegram import iniciar_polling, iniciar_vigilancia
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    parar = iniciar_polling()
+    paradas = [iniciar_polling(), iniciar_vigilancia()]
     yield
-    if parar:
-        parar.set()
+    for parar in paradas:
+        if parar:
+            parar.set()
 
 
 # En producción no se publica la documentación interactiva ni el esquema de la API.

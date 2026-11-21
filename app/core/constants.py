@@ -9,11 +9,13 @@ DIRECCIONES_PUBLICAS = {"0.0.0.0", "::", "*"}
 PREFIJOS_TEMPORALES = ("/tmp/", "/var/tmp/", "/dev/shm/")
 FRAGMENTOS_TEMPORALES = ("/appdata/local/temp/", "/windows/temp/")
 
-USUARIOS_ADMIN = {"root", "system", "nt authority\\system", "administrator"}
+USUARIOS_ADMIN = {"root", "administrator"}
 
 NIVELES = ("baja", "media", "alta")
 PUNTOS_POR_SEVERIDAD = {"critica": 30, "alta": 15, "media": 8, "baja": 3}
 FACTOR_CONFIANZA = {"alta": 1.0, "media": 0.6, "baja": 0.3}
+TOPE_PUNTOS_BAJA = 20
+ORDEN_SEVERIDAD = ("baja", "media", "alta", "critica")
 
 CIFRADO_TEXTO = {
     True: "cifrado",
@@ -134,6 +136,17 @@ REGLAS = [
         "recommendation": "Confirma que el proceso es legítimo y ejecútalo con el mínimo de privilegios.",
     },
 ]
+
+REACTIVAR_AGENTE = {
+    "windows": {
+        "pasos": "Abre PowerShell como administrador y ejecuta:",
+        "comando": "$s = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Seconds 0) -RestartCount 5 -RestartInterval (New-TimeSpan -Minutes 1) -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries; Set-ScheduledTask -TaskName PortAlertAgent -Settings $s | Out-Null; Start-ScheduledTask -TaskName PortAlertAgent",
+    },
+    "linux": {
+        "pasos": "En la terminal ejecuta:",
+        "comando": "sudo systemctl restart portalert-agent",
+    },
+}
 
 VT_URL = "https://www.virustotal.com/api/v3"
 UMBRAL_MALICIOSA = 3

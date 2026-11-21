@@ -50,3 +50,11 @@ def test_instalador_windows_se_eleva_solo(client, registrar):
     assert "param([switch]$Elevado)" in texto
     assert "-Verb RunAs" in texto and "$PSCommandPath" in texto
     assert texto.index("-Verb RunAs") < texto.index("Invoke-WebRequest")
+
+
+def test_tarea_de_windows_sin_limite_de_tiempo_y_con_bateria(client, registrar):
+    token = _token(client, registrar())
+    texto = client.get(f"/installers/instalar-{token}.ps1").text
+    assert "-ExecutionTimeLimit (New-TimeSpan -Seconds 0)" in texto
+    assert "-AllowStartIfOnBatteries" in texto and "-DontStopIfGoingOnBatteries" in texto
+    assert "-Settings $config" in texto

@@ -1,6 +1,5 @@
 # Seguridad de PortAlert
 
-Qué protege hoy el código, qué debes configurar en producción y qué falta. Aplica al backend y al frontend.
 
 ## Ya implementado
 | Tema | Qué hace |
@@ -35,15 +34,4 @@ El límite de la aplicación frena fuerza bruta, scraping y ráfagas de **un** c
 3. Si usas varias instancias, mueve `SlidingWindow` a Redis (misma interfaz).
 4. Vercel ya absorbe la capa del frontend; activa su Firewall/Attack Challenge Mode si lo necesitas.
 
-## Pendiente, por prioridad
-1. **Rotar secretos expuestos.** El `.env` viajó dentro de un zip: rota el token del bot de Telegram (BotFather → /revoke), la contraseña de la base de datos y `SECRET_KEY` (cerrará las sesiones). No empaquetes `.env`.
-2. **Sesión en `sessionStorage`**: cualquier XSS la puede leer. Más seguro: cookie `HttpOnly; Secure; SameSite=Lax` + token CSRF, y una lista de revocación para cerrar sesión de verdad (hoy el JWT vale 60 min aunque cierres sesión).
-3. **Códigos de recuperación del 2FA** (si pierdes el teléfono hoy no hay forma de entrar) y exigir 2FA a todas las cuentas.
-4. **Restablecer contraseña y verificar correo**: no existen; al crearlos, tokens de un solo uso hasheados y con límite de peticiones.
-5. **Crecimiento de la base**: llega ~1 reporte por minuto por equipo (con procesos y puertos). Sin una tarea de limpieza (p. ej. borrar reportes de más de 30 días conservando el primero) el disco se llena.
-6. **Base de datos**: que la app use un rol sin permisos de administrador, conexión con TLS (`sslmode=require`), respaldos cifrados.
-7. **Agente**: rechazar `--server` que no sea HTTPS (salvo localhost), exigir `AGENT_SHA256_*` en producción y firmar los binarios (Authenticode en Windows / GPG en Linux). Evita documentar `curl | sudo bash` sin verificar hash.
-8. **Contraseñas**: comprobar filtraciones con Have I Been Pwned (k-anonimato) o `zxcvbn` en lugar de una lista fija.
-9. **Enumeración de cuentas**: `/auth/register` responde 409 si el correo existe (cómodo, pero revela cuentas). Se mitiga con el límite; el estándar es responder igual y avisar por correo.
-10. **CI**: `pip-audit`, `npm audit`, `bandit`, `gitleaks` y Dependabot en cada push; fijar la imagen base por digest.
-11. **Monitoreo**: enviar `portalert.security` a un agregador y alertar ante picos de `login_fallido` o respuestas 429.
+

@@ -17,6 +17,7 @@ from app.core.constants import (
     PUERTOS,
     PUNTOS_POR_SEVERIDAD,
     SERVICIOS_ESPERADOS,
+    TOPE_PUNTOS_BAJA,
     USUARIOS_ADMIN,
 )
 from app.models import (
@@ -392,8 +393,9 @@ def analyze_report(db: Session, host: Host, report: Report) -> int:
             )
         )
 
-    penalizacion = sum(
-        round(PUNTOS_POR_SEVERIDAD[h.severidad] * FACTOR_CONFIANZA[h.confianza])
-        for h in found.values()
-    )
+    puntos = {"baja": 0, "otras": 0}
+    for h in found.values():
+        grupo = "baja" if h.severidad == "baja" else "otras"
+        puntos[grupo] += round(PUNTOS_POR_SEVERIDAD[h.severidad] * FACTOR_CONFIANZA[h.confianza])
+    penalizacion = min(puntos["baja"], TOPE_PUNTOS_BAJA) + puntos["otras"]
     return max(0, 100 - penalizacion)

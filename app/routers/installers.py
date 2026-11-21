@@ -71,44 +71,62 @@ systemctl enable --now portalert-agent
 echo "Listo. El agente quedó instalado y enviará su primer reporte en unos segundos."
 """
 
-PS1 = """# Instalador de PortAlert para Windows. Enlace de un solo uso: vence a los pocos minutos.
-# Ejecutar en PowerShell como administrador.
+PS1 = """param([switch]$Elevado)
+# Instalador de PortAlert para Windows. Enlace de un solo uso: vence a los pocos minutos.
+# Si no se abrió como administrador, se vuelve a abrir solo pidiendo permiso a Windows.
 $ErrorActionPreference = 'Stop'
 $principal = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
 if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-  Write-Error 'Abre PowerShell como administrador y vuelve a ejecutar este instalador.'
-}
-
-$Server = __SERVER__
-$Token  = __TOKEN__
-$Url    = __URL__
-$Sha256 = __SHA__
-$Dir    = Join-Path $env:ProgramFiles 'PortAlert'
-$Exe    = Join-Path $Dir 'portalert-agent.exe'
-$Conf   = Join-Path $env:ProgramData 'PortAlert\\config.json'
-
-New-Item -ItemType Directory -Force -Path $Dir | Out-Null
-New-Item -ItemType Directory -Force -Path (Split-Path $Conf) | Out-Null
-Write-Host 'Descargando el agente de PortAlert...'
-Invoke-WebRequest -Uri $Url -OutFile $Exe -UseBasicParsing
-if ($Sha256 -ne '') {
-  if ((Get-FileHash $Exe -Algorithm SHA256).Hash.ToLower() -ne $Sha256) {
-    Remove-Item $Exe -Force
-    Write-Error 'El archivo descargado no coincide con el hash esperado.'
+  if (-not $PSCommandPath) {
+    Write-Host 'Guarda este instalador como archivo .ps1 y ejecútalo desde ahí.' -ForegroundColor Red
+    return
   }
+  Write-Host 'El instalador necesita permisos de administrador. Windows te va a pedir confirmación...'
+  try {
+    Start-Process -FilePath 'powershell.exe' -Verb RunAs -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ('"' + $PSCommandPath + '"'), '-Elevado')
+  } catch {
+    Write-Host 'No se concedió el permiso de administrador. La instalación se canceló.' -ForegroundColor Red
+  }
+  return
 }
 
-[Environment]::SetEnvironmentVariable('PORTALERT_CONFIG', $Conf, 'Machine')
-$env:PORTALERT_CONFIG = $Conf
-& $Exe enroll --server $Server --token $Token
-if ($LASTEXITCODE -ne 0) { Write-Error 'No se pudo vincular el equipo.' }
+try {
+  $Server = __SERVER__
+  $Token  = __TOKEN__
+  $Url    = __URL__
+  $Sha256 = __SHA__
+  $Dir    = Join-Path $env:ProgramFiles 'PortAlert'
+  $Exe    = Join-Path $Dir 'portalert-agent.exe'
+  $Conf   = Join-Path $env:ProgramData 'PortAlert\\config.json'
 
-$action  = New-ScheduledTaskAction -Execute $Exe -Argument 'run'
-$trigger = New-ScheduledTaskTrigger -AtStartup
-$user    = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -RunLevel Highest
-Register-ScheduledTask -TaskName 'PortAlertAgent' -Action $action -Trigger $trigger -Principal $user -Force | Out-Null
-Start-ScheduledTask -TaskName 'PortAlertAgent'
-Write-Host 'Listo. El agente quedó instalado y enviará su primer reporte en unos segundos.'
+  New-Item -ItemType Directory -Force -Path $Dir | Out-Null
+  New-Item -ItemType Directory -Force -Path (Split-Path $Conf) | Out-Null
+  Write-Host 'Descargando el agente de PortAlert...'
+  Invoke-WebRequest -Uri $Url -OutFile $Exe -UseBasicParsing
+  if ($Sha256 -ne '') {
+    if ((Get-FileHash $Exe -Algorithm SHA256).Hash.ToLower() -ne $Sha256) {
+      Remove-Item $Exe -Force
+      Write-Error 'El archivo descargado no coincide con el hash esperado.'
+    }
+  }
+
+  [Environment]::SetEnvironmentVariable('PORTALERT_CONFIG', $Conf, 'Machine')
+  $env:PORTALERT_CONFIG = $Conf
+  & $Exe enroll --server $Server --token $Token
+  if ($LASTEXITCODE -ne 0) { Write-Error 'No se pudo vincular el equipo.' }
+
+  $action  = New-ScheduledTaskAction -Execute $Exe -Argument 'run'
+  $trigger = New-ScheduledTaskTrigger -AtStartup
+  $user    = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -RunLevel Highest
+  $config  = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Seconds 0) -RestartCount 5 -RestartInterval (New-TimeSpan -Minutes 1) -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+  Register-ScheduledTask -TaskName 'PortAlertAgent' -Action $action -Trigger $trigger -Principal $user -Settings $config -Force | Out-Null
+  Start-ScheduledTask -TaskName 'PortAlertAgent'
+  Write-Host 'Listo. El agente quedó instalado y enviará su primer reporte en unos segundos.' -ForegroundColor Green
+} catch {
+  Write-Host ('Error: ' + $_.Exception.Message) -ForegroundColor Red
+} finally {
+  if ($Elevado) { Read-Host 'Presiona Enter para cerrar esta ventana' | Out-Null }
+}
 """
 
 

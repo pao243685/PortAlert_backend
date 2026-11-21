@@ -1,17 +1,18 @@
 import logging
 import threading
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
 
 import httpx
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core import config
 from app.core.database import SessionLocal
+from app.core.constants import ORDEN_SEVERIDAD, REACTIVAR_AGENTE
 from app.core.security import as_utc, hash_telegram_token
-from app.models import Alert, AlertStatus, Host, User
+from app.models import Alert, AlertStatus, Host, Report, Severity, User
 from app.schemas.alert import reference_of
 
 log = logging.getLogger("portalert.telegram")
@@ -136,6 +137,13 @@ def _texto_alerta(alerta: Alert, host: Host) -> str:
     )
 
 
+def severidades_a_notificar() -> list[Severity]:
+    minimo = config.TELEGRAM_MIN_SEVERITY
+    if minimo not in ORDEN_SEVERIDAD:
+        minimo = "baja"
+    return [Severity(s) for s in ORDEN_SEVERIDAD[ORDEN_SEVERIDAD.index(minimo):]]
+
+
 def notificar_pendientes(host_id: int) -> None:
     if not configurado():
         return
@@ -150,6 +158,7 @@ def notificar_pendientes(host_id: int) -> None:
                 Alert.host_id == host_id,
                 Alert.status == AlertStatus.nueva,
                 Alert.notified_at.is_(None),
+                Alert.severity.in_(severidades_a_notificar()),
             )
             .order_by(Alert.id)
         ).all()
@@ -158,6 +167,67 @@ def notificar_pendientes(host_id: int) -> None:
                 break
             alerta.notified_at = datetime.now(timezone.utc)
             db.commit()
+
+
+def _texto_desconexion(host: Host, minutos: int) -> str:
+    texto = (
+        "PortAlert · Equipo sin conexión\n"
+        f"{host.name} dejó de reportar hace {minutos} min.\n\n"
+        "Puede estar apagado o suspendido, sin internet, o el agente se detuvo. "
+        "PortAlert no puede distinguir cuál de las tres fue.\n\n"
+        "Si el equipo está encendido y con internet, reactiva el agente."
+    )
+    pasos = REACTIVAR_AGENTE.get(host.os_family)
+    if pasos:
+        texto += f"\n{pasos['pasos']}\n{pasos['comando']}"
+    return texto + f"\n\nMás detalles: {config.FRONTEND_URL}/mi-equipo"
+
+
+def _texto_reconexion(host: Host) -> str:
+    return f"PortAlert · Equipo de nuevo en línea\n{host.name} volvió a reportar."
+
+
+def revisar_conexion() -> None:
+    if not configurado():
+        return
+    ahora = datetime.now(timezone.utc)
+    limite = timedelta(minutes=config.OFFLINE_MINUTES)
+    with SessionLocal() as db:
+        filas = db.execute(
+            select(Host, User)
+            .join(User, User.id == Host.user_id)
+            .where(User.telegram_chat_id.is_not(None))
+        ).all()
+        for host, user in filas:
+            ultimo = db.scalar(select(func.max(Report.received_at)).where(Report.host_id == host.id))
+            if ultimo is None:
+                continue
+            silencio = ahora - as_utc(ultimo)
+            if silencio > limite and host.offline_notified_at is None:
+                minutos = int(silencio.total_seconds() // 60)
+                if enviar_mensaje(user.telegram_chat_id, _texto_desconexion(host, minutos)):
+                    host.offline_notified_at = ahora
+                    db.commit()
+            elif silencio <= limite and host.offline_notified_at is not None:
+                if enviar_mensaje(user.telegram_chat_id, _texto_reconexion(host)):
+                    host.offline_notified_at = None
+                    db.commit()
+
+
+def _bucle_conexion(parar: threading.Event) -> None:
+    while not parar.wait(60):
+        try:
+            revisar_conexion()
+        except Exception as e:
+            log.warning("revisión de conexión falló: %s", type(e).__name__)
+
+
+def iniciar_vigilancia() -> threading.Event | None:
+    if not configurado():
+        return None
+    parar = threading.Event()
+    threading.Thread(target=_bucle_conexion, args=(parar,), daemon=True).start()
+    return parar
 
 
 def _bucle_polling(parar: threading.Event) -> None:

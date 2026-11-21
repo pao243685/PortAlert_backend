@@ -90,6 +90,7 @@ class Host(Base):
     score: Mapped[int | None] = mapped_column(Integer)
     # Se llena cuando la persona pulsa "Terminar revisión" en la primera revisión.
     review_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    offline_notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

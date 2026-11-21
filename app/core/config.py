@@ -31,6 +31,8 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_BOT_USERNAME = os.getenv("TELEGRAM_BOT_USERNAME", "").lstrip("@")
 TELEGRAM_WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET", "")
 TELEGRAM_LINK_MINUTES = int(os.getenv("TELEGRAM_LINK_MINUTES", "10"))
+TELEGRAM_MIN_SEVERITY = os.getenv("TELEGRAM_MIN_SEVERITY", "baja")
+OFFLINE_MINUTES = int(os.getenv("OFFLINE_MINUTES", "5"))
 
 # --- seguridad ---
 APP_ENV = os.getenv("APP_ENV", "development")  # "production": sin /docs, con HSTS y CSP estricta
