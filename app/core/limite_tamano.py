@@ -2,17 +2,24 @@ from starlette.responses import JSONResponse
 
 
 class LimiteReportes:
-    def __init__(self, app, max_bytes: int):
+    """Rechaza cuerpos demasiado grandes. /reports tiene su propio tope; el resto de POST/PUT/PATCH, `max_general`."""
+
+    def __init__(self, app, max_bytes: int, max_general: int = 100_000):
         self.app = app
         self.max_bytes = max_bytes
+        self.max_general = max_general
 
     async def __call__(self, scope, receive, send):
-        if (
-            scope["type"] != "http"
-            or scope["method"] != "POST"
-            or scope["path"] != "/reports"
-        ):
+        if scope["type"] != "http" or scope["method"] not in ("POST", "PUT", "PATCH"):
             await self.app(scope, receive, send)
+            return
+
+        limite = self.max_bytes if scope["path"] == "/reports" else self.max_general
+        detalle = "Reporte demasiado grande" if scope["path"] == "/reports" else "Petición demasiado grande"
+
+        declarado = dict(scope["headers"]).get(b"content-length")
+        if declarado and declarado.isdigit() and int(declarado) > limite:
+            await JSONResponse({"detail": detalle}, status_code=413)(scope, receive, send)
             return
 
         total = 0
@@ -23,11 +30,8 @@ class LimiteReportes:
                 break
             cuerpo = mensaje.get("body", b"")
             total += len(cuerpo)
-            if total > self.max_bytes:
-                respuesta = JSONResponse(
-                    {"detail": "Reporte demasiado grande"}, status_code=413
-                )
-                await respuesta(scope, receive, send)
+            if total > limite:
+                await JSONResponse({"detail": detalle}, status_code=413)(scope, receive, send)
                 return
             partes.append(cuerpo)
             if not mensaje.get("more_body", False):

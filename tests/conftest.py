@@ -1,7 +1,7 @@
 import os
 
 os.environ["DATABASE_URL"] = "sqlite:///./test_portalert.db"
-os.environ["SECRET_KEY"] = "clave-de-pruebas"
+os.environ["SECRET_KEY"] = "clave-de-pruebas-con-al-menos-32-caracteres!"
 from cryptography.fernet import Fernet
 
 os.environ["TOTP_ENCRYPTION_KEY"] = Fernet.generate_key().decode()
@@ -20,6 +20,14 @@ from app import models
 from app.core.database import Base, SessionLocal, engine
 from app.main import app
 from app.services.rules import seed_rules
+
+
+@pytest.fixture(autouse=True)
+def limites_en_cero():
+    from app.core.ratelimit import limiter
+
+    limiter.reset()
+    yield
 
 
 @pytest.fixture(autouse=True)
@@ -46,7 +54,7 @@ def client():
 
 @pytest.fixture
 def registrar(client):
-    def _registrar(email="a@correo.com", password="Clave12345"):
+    def _registrar(email="a@correo.com", password="Zorro-Azul-47!"):
         client.post("/auth/register", json={"email": email, "password": password})
         r = client.post("/auth/login", data={"username": email, "password": password})
         return {"Authorization": f"Bearer {r.json()['access_token']}"}

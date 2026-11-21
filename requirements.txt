@@ -9,5 +9,5 @@ python-dotenv==1.2.4
 python-multipart==0.0.32
 SQLAlchemy==2.0.55
 uvicorn[standard]
-cryptography==46.0.3
+cryptography==50.0.2
 pyotp==2.9.0

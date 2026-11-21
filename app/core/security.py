@@ -22,7 +22,21 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(password: str, hashed: str) -> bool:
-    return bcrypt.checkpw(password.encode(), hashed.encode())
+    try:
+        return bcrypt.checkpw(password.encode(), hashed.encode())
+    except ValueError:  # bcrypt rechaza contraseñas de más de 72 bytes: no puede ser la correcta
+        return False
+
+
+_DUMMY_HASH: str | None = None
+
+
+def verify_dummy(password: str) -> None:
+    """Gasta el mismo tiempo que una verificación real: así no se distingue "correo inexistente" de "clave mala"."""
+    global _DUMMY_HASH
+    if _DUMMY_HASH is None:
+        _DUMMY_HASH = hash_password("contraseña-señuelo-sin-uso")
+    verify_password(password, _DUMMY_HASH)
 
 
 def generate_api_key() -> tuple[str, str]:

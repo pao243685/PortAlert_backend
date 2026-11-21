@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import ENROLL_TOKEN_MINUTES
 from app.core.database import get_db
+from app.core.ratelimit import rate_limit
 from app.core.deps import get_current_user
 from app.core.security import (
     as_utc,
@@ -21,7 +22,7 @@ from app.schemas.host import EnrollIn, EnrollTokenOut, HostCreated, HostOut
 router = APIRouter(prefix="/hosts", tags=["hosts"])
 
 
-@router.post("/enroll-token", response_model=EnrollTokenOut, status_code=201)
+@router.post("/enroll-token", response_model=EnrollTokenOut, status_code=201, dependencies=[Depends(rate_limit("enroll-token"))])
 def create_enroll_token(
     user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
@@ -37,7 +38,7 @@ def create_enroll_token(
     return EnrollTokenOut(enroll_token=token, expires_at=expires)
 
 
-@router.post("/enroll", response_model=HostCreated, status_code=201)
+@router.post("/enroll", response_model=HostCreated, status_code=201, dependencies=[Depends(rate_limit("enroll"))])
 def enroll(data: EnrollIn, db: Session = Depends(get_db)):
     """Lo llama el agente (sin sesión): canjea el token por una API key."""
     now = datetime.now(timezone.utc)

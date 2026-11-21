@@ -1,9 +1,18 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
+
+from app.core.passwords import problems
 
 
 class UserCreate(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=8, max_length=72)
+    password: str = Field(min_length=1, max_length=128)
+
+    @model_validator(mode="after")
+    def _politica_de_contrasena(self):
+        faltan = problems(self.password, str(self.email))
+        if faltan:
+            raise ValueError("La contraseña debe tener: " + "; ".join(faltan) + ".")
+        return self
 
 
 class UserOut(BaseModel):

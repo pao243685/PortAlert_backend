@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core import config
 from app.core.database import get_db
+from app.core.ratelimit import rate_limit
 from app.core.deps import get_current_user
 from app.core.security import as_utc, generate_telegram_token, hash_telegram_token
 from app.models import User
@@ -39,7 +40,7 @@ def status(user: User = Depends(get_current_user)):
     )
 
 
-@router.post("/link", response_model=TelegramLinkOut, status_code=201)
+@router.post("/link", response_model=TelegramLinkOut, status_code=201, dependencies=[Depends(rate_limit("telegram"))])
 def create_link(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     _requerir_bot()
     if user.telegram_chat_id:
@@ -56,7 +57,7 @@ def create_link(user: User = Depends(get_current_user), db: Session = Depends(ge
     )
 
 
-@router.post("/test", status_code=204)
+@router.post("/test", status_code=204, dependencies=[Depends(rate_limit("telegram-test"))])
 def send_test(user: User = Depends(get_current_user)):
     _requerir_bot()
     if not user.telegram_chat_id:
@@ -73,7 +74,7 @@ def remove_link(user: User = Depends(get_current_user), db: Session = Depends(ge
     db.commit()
 
 
-@router.post("/webhook")
+@router.post("/webhook", dependencies=[Depends(rate_limit("telegram"))])
 def webhook(
     data: dict,
     x_telegram_bot_api_secret_token: str = Header(default=""),
