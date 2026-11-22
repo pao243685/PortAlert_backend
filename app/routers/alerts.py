@@ -77,6 +77,14 @@ def get_alert(
         confidence_note=NOTA_CONFIANZA.get(alert.confidence, NOTA_CONFIANZA["media"]),
         recommendation=h.recomendacion if h else "",
         can_mark_normal=bool(h and clave_normal(h)),
+        reputation=next(
+            (
+                c.removeprefix("Reputación de la huella: ")
+                for c in (h.contexto if h else [])
+                if c.startswith("Reputación de la huella:")
+            ),
+            None,
+        ),
     )
 
 

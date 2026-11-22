@@ -57,3 +57,4 @@ class AlertDetailOut(AlertOut):
     confidence_note: str
     recommendation: str
     can_mark_normal: bool
+    reputation: str | None = None
