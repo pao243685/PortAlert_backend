@@ -184,31 +184,3 @@ def installer_windows(token: str, request: Request, db: Session = Depends(get_db
         raise HTTPException(503, "El instalador para Windows no está disponible todavía")
     body = _render(PS1, _ps_quote, token, _server_url(request), config.AGENT_DOWNLOAD_URL_WINDOWS, config.AGENT_SHA256_WINDOWS)
     return _respond(body, "instalar-portalert.ps1")
-
-
-@router.get("/instalar-{token}.cmd", response_class=PlainTextResponse, dependencies=[Depends(rate_limit("installer"))])
-def installer_windows_cmd(token: str, request: Request, db: Session = Depends(get_db)):
-    _check_token(db, token)
-    if not config.AGENT_DOWNLOAD_URL_WINDOWS:
-        raise HTTPException(503, "El instalador para Windows no está disponible todavía")
-    ps_url = f"{_server_url(request)}/installers/instalar-{token}.ps1"
-    lines = [
-        "@echo off",
-        "title Instalador de PortAlert",
-        "echo Descargando instalador de PortAlert...",
-        r'set "TMP_PS1=%TEMP%\instalar-portalert-%RANDOM%.ps1"',
-        f"powershell -NoProfile -ExecutionPolicy Bypass -Command \"try {{ Invoke-WebRequest -UseBasicParsing -Uri '{ps_url}' -OutFile '%TMP_PS1%' }} catch {{ Write-Host $_.Exception.Message -ForegroundColor Red; exit 1 }}\"",
-        "if errorlevel 1 (",
-        "    echo.",
-        "    echo No se pudo descargar el instalador. Verifica tu conexion o genera un enlace nuevo.",
-        "    pause",
-        "    exit /b 1",
-        ")",
-        'powershell -NoProfile -ExecutionPolicy Bypass -File "%TMP_PS1%"',
-        'set "ERR=%ERRORLEVEL%"',
-        'del /f /q "%TMP_PS1%" >nul 2>&1',
-        'if not "%ERR%"=="0" pause',
-        "exit /b %ERR%",
-    ]
-    body = "\r\n".join(lines) + "\r\n"
-    return _respond(body, "instalar-portalert.cmd")
