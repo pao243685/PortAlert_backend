@@ -26,6 +26,7 @@ class AlertOut(BaseModel):
     confidence: str
     event_type: EventType | None = None
     created_at: datetime
+    notified_at: datetime | None = None
     model_config = {"from_attributes": True}
 
     @computed_field
